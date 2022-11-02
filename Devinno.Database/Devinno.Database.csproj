@@ -7,7 +7,8 @@
     <PackageIcon>ico.png</PackageIcon>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <Version>1.1.0.1</Version>
-    <PackageProjectUrl>https://github.com/devinno-kr/Devinno.Database</PackageProjectUrl>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl>https://github.com/devinno-kr/Devinno.Database</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
