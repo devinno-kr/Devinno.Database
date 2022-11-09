@@ -50,7 +50,8 @@ namespace Sample
             public int? Count { get; set; }
             public string? Description { get; set; }
 
-            public override string ToString() => $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
+            public override string ToString() =>
+                $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
         }
     }
 }

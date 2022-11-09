@@ -31,7 +31,14 @@ MySQL DB 기능 수행
 ```csharp
 static void Main(string[] args)
 {
-    var db = new MySQL { DatabaseName = "db_test", Host = "127.0.0.1", ID = "root", Password = "mysql" };
+    var db = new MySQL
+    {
+        DatabaseName = "db_test",
+        Host = "127.0.0.1",
+        ID = "root",
+        Password = "mysql"
+    };
+
     var tbl = "tblTest";
 
     Console.WriteLine("DropTable");     db.DropTable(tbl);
@@ -72,7 +79,8 @@ public class Data
     public int? Count { get; set; }
     public string? Description { get; set; }
 
-    public override string ToString() => $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
+    public override string ToString() => 
+        $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
 }
 ```
 
@@ -101,7 +109,14 @@ MsSQL DB 기능 수행
 ```csharp
 static void Main(string[] args)
 {
-    var db = new MsSQL { DatabaseName = "db_test", Host= @"DESKTOP\SQLEXPRESS", ID = @"DESKTOP\user", IntegratedSecurity=true };
+    var db = new MsSQL
+    {
+        DatabaseName = "db_test",
+        Host = @"DESKTOP\SQLEXPRESS",
+        ID = @"DESKTOP\user",
+        IntegratedSecurity = true
+    };
+
     var tbl = "tblTest";
 
     Console.WriteLine("DropTable");     db.DropTable(tbl);
@@ -142,7 +157,8 @@ public class Data
     public int? Count { get; set; }
     public string? Description { get; set; }
 
-    public override string ToString() => $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
+    public override string ToString() =>
+        $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
 }
 ```
 
@@ -212,7 +228,8 @@ public class Data
     public int? Count { get; set; }
     public string? Description { get; set; }
 
-    public override string ToString() => $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
+    public override string ToString() =>
+        $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
 }
 ```
 
