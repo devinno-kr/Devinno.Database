@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.32602.291
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Devinno.Database", "Devinno.Database.csproj", "{CA54610A-A18A-404B-A40A-5137CE8A1566}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample", "..\Sample\Sample.csproj", "{E7B036B4-2280-4171-A213-E70E9267CBE1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{CA54610A-A18A-404B-A40A-5137CE8A1566}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA54610A-A18A-404B-A40A-5137CE8A1566}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA54610A-A18A-404B-A40A-5137CE8A1566}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7B036B4-2280-4171-A213-E70E9267CBE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7B036B4-2280-4171-A213-E70E9267CBE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7B036B4-2280-4171-A213-E70E9267CBE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7B036B4-2280-4171-A213-E70E9267CBE1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

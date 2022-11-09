@@ -31,15 +31,66 @@ MySQL DB 기능 수행
 ```csharp
 static void Main(string[] args)
 {
+    var db = new MySQL { DatabaseName = "db_test", Host = "127.0.0.1", ID = "root", Password = "mysql" };
+    var tbl = "tblTest";
+
+    Console.WriteLine("DropTable");     db.DropTable(tbl);
+    Console.WriteLine("CreateTable");   db.CreateTable<Data>(tbl);
+    Console.WriteLine("Insert");        db.Insert<Data>(tbl, new Data
+                                        {
+                                            Humidity = 70,
+                                            Temperature = 36.5,
+                                            Operation = true,
+                                            Count = 10,
+                                        });
+                                        Print(db.Select<Data>(tbl));
+    Console.WriteLine("Update");        var d = db.Select<Data>(tbl).FirstOrDefault();
+                                        d.Humidity = 100;
+                                        d.OpenClose = true;
+                                        d.Operation = false;
+                                        d.Count = 15;
+                                        d.Description = "Test";
+                                        db.Update<Data>(tbl, d);
+                                        Print(db.Select<Data>(tbl));
+    Console.WriteLine("Delete");        db.Delete<Data>(tbl, d);
+                                        Print(db.Select<Data>(tbl));
+
+    Console.ReadKey();
+}
+
+static void Print(List<Data> ls) => ls.ForEach((v) => Console.WriteLine(v));
+
+public class Data
+{
+    [SqlKey(AutoIncrement = true)]
+    public int Id { get; set; }
+
+    public double Humidity { get; set; }
+    public double Temperature { get; set; }
+    public bool OpenClose { get; set; }
+    public bool Operation { get; set; }
+    public int? Count { get; set; }
+    public string? Description { get; set; }
+
+    public override string ToString() => $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
 }
 ```
 
 * **결과**
 ```
+DropTable
+CreateTable
+Insert
+1,70,36.5,False,True,10,
+Update
+1,100,36.5,True,False,15,Test
+Delete
+
 ```
 
 * **설명** 
 ``` 
+DropTable, CreateTable, Select, Insert, Update, Delete 테스트
 ```
 <br /> 
 
@@ -50,15 +101,66 @@ MsSQL DB 기능 수행
 ```csharp
 static void Main(string[] args)
 {
+    var db = new MsSQL { DatabaseName = "db_test", Host= @"DESKTOP\SQLEXPRESS", ID = @"DESKTOP\user", IntegratedSecurity=true };
+    var tbl = "tblTest";
+
+    Console.WriteLine("DropTable");     db.DropTable(tbl);
+    Console.WriteLine("CreateTable");   db.CreateTable<Data>(tbl);
+    Console.WriteLine("Insert");        db.Insert<Data>(tbl, new Data
+                                        {
+                                            Humidity = 70,
+                                            Temperature = 36.5,
+                                            Operation = true,
+                                            Count = 10,
+                                        });
+                                        Print(db.Select<Data>(tbl));
+    Console.WriteLine("Update");        var d = db.Select<Data>(tbl).FirstOrDefault();
+                                        d.Humidity = 100;
+                                        d.OpenClose = true;
+                                        d.Operation = false;
+                                        d.Count = 15;
+                                        d.Description = "Test";
+                                        db.Update<Data>(tbl, d);
+                                        Print(db.Select<Data>(tbl));
+    Console.WriteLine("Delete");        db.Delete<Data>(tbl, d);
+                                        Print(db.Select<Data>(tbl));
+
+    Console.ReadKey();
+}
+
+static void Print(List<Data> ls) => ls.ForEach((v) => Console.WriteLine(v));
+
+public class Data
+{
+    [SqlKey(AutoIncrement = true)]
+    public int Id { get; set; }
+
+    public double Humidity { get; set; }
+    public double Temperature { get; set; }
+    public bool OpenClose { get; set; }
+    public bool Operation { get; set; }
+    public int? Count { get; set; }
+    public string? Description { get; set; }
+
+    public override string ToString() => $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
 }
 ```
 
 * **결과**
 ```
+DropTable
+CreateTable
+Insert
+1,70,36.5,False,True,10,
+Update
+1,100,36.5,True,False,15,Test
+Delete
+
 ```
 
 * **설명** 
 ``` 
+DropTable, CreateTable, Select, Insert, Update, Delete 테스트
 ```
 <br /> 
 
@@ -69,15 +171,66 @@ SQLite DB 기능 수행
 ```csharp
 static void Main(string[] args)
 {
+    var db = new SQLite { FileName = "db.sqlite" };
+    var tbl = "tblTest";
+
+    Console.WriteLine("DropTable");     db.DropTable(tbl);
+    Console.WriteLine("CreateTable");   db.CreateTable<Data>(tbl);
+    Console.WriteLine("Insert");        db.Insert<Data>(tbl, new Data
+                                        {
+                                            Humidity = 70,
+                                            Temperature = 36.5,
+                                            Operation = true,
+                                            Count = 10,
+                                        });
+                                        Print(db.Select<Data>(tbl));
+    Console.WriteLine("Update");        var d = db.Select<Data>(tbl).FirstOrDefault();
+                                        d.Humidity = 100;
+                                        d.OpenClose = true;
+                                        d.Operation = false;
+                                        d.Count = 15;
+                                        d.Description = "Test";
+                                        db.Update<Data>(tbl, d);
+                                        Print(db.Select<Data>(tbl));
+    Console.WriteLine("Delete");        db.Delete<Data>(tbl, d);
+                                        Print(db.Select<Data>(tbl));
+
+    Console.ReadKey();
+}
+
+static void Print(List<Data> ls) => ls.ForEach((v) => Console.WriteLine(v));
+
+public class Data
+{
+    [SqlKey(AutoIncrement = true)]
+    public int Id { get; set; }
+
+    public double Humidity { get; set; }
+    public double Temperature { get; set; }
+    public bool OpenClose { get; set; }
+    public bool Operation { get; set; }
+    public int? Count { get; set; }
+    public string? Description { get; set; }
+
+    public override string ToString() => $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
 }
 ```
 
 * **결과**
 ```
+DropTable
+CreateTable
+Insert
+1,70,36.5,False,True,10,
+Update
+1,100,36.5,True,False,15,Test
+Delete
+
 ```
 
 * **설명** 
 ``` 
+DropTable, CreateTable, Select, Insert, Update, Delete 테스트
 ```
 
 <br /> 

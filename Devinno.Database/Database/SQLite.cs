@@ -850,11 +850,22 @@ namespace Devinno.Database
                 }
                 else
                 {
-                    ret = new NullableInfo
+                    if (pi.PropertyType.CustomAttributes.Count() > 0)
                     {
-                        IsNullable = false,
-                        Type = pi.PropertyType,
-                    };
+                        ret = new NullableInfo
+                        {
+                            IsNullable = pi.PropertyType.CustomAttributes.Where(x => x.AttributeType.ToString() == "System.Runtime.CompilerServices.NullableAttribute").FirstOrDefault() != null,
+                            Type = pi.PropertyType,
+                        };
+                    }
+                    else
+                    {
+                        ret = new NullableInfo
+                        {
+                            IsNullable = false,
+                            Type = pi.PropertyType,
+                        };
+                    }
                 }
             }
             else

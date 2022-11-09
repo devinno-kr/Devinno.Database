@@ -22,7 +22,6 @@ namespace Devinno.Database
         public string Password { get; set; } = "1234";
         public string DatabaseName { get; set; }
         public string ConnectStringOptions { get; set; } = "";
-        public string KeyName { get; set; } = "Id";
         private string ConnectString => $"Server={Host};Port={Port};Database={DatabaseName};Uid={ID};pwd={Password};" + ConnectStringOptions;
         #endregion
 
@@ -592,11 +591,22 @@ namespace Devinno.Database
                 }
                 else
                 {
-                    ret = new NullableInfo
+                    if (pi.PropertyType.CustomAttributes.Count() > 0)
                     {
-                        IsNullable = false,
-                        Type = pi.PropertyType,
-                    };
+                        ret = new NullableInfo
+                        {
+                            IsNullable = pi.PropertyType.CustomAttributes.Where(x => x.AttributeType.ToString() == "System.Runtime.CompilerServices.NullableAttribute").FirstOrDefault() != null,
+                            Type = pi.PropertyType,
+                        };
+                    }
+                    else
+                    {
+                        ret = new NullableInfo
+                        {
+                            IsNullable = false,
+                            Type = pi.PropertyType,
+                        };
+                    }
                 }
             }
             else
