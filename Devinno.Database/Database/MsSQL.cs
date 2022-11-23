@@ -21,10 +21,10 @@ namespace Devinno.Database
         public string DatabaseName { get; set; }
         public bool IntegratedSecurity { get; set; }
         public string ConnectStringOptions { get; set; } = "";
-
+        public int Port { get; set; } = 1433;
         private string ConnectString => (IntegratedSecurity
             ? $"Server={Host};Database={DatabaseName};Integrated Security=True;" + ConnectStringOptions
-            : $"Server={Host};Database={DatabaseName};Uid={ID};pwd={Password};" + ConnectStringOptions);
+            : $"Server={Host},{Port};Database={DatabaseName};Uid={ID};pwd={Password};" + ConnectStringOptions);
         #endregion
 
         #region Constructor
@@ -43,39 +43,43 @@ namespace Devinno.Database
 
         #region Command
         #region Exist
-        public bool Exist<T>(string TableName, T Data) { bool ret = false; Execute((conn, cmd, trans) => { ret = MsSqlCommandTool.Exist<T>(cmd, TableName, Data); }); return ret; }
+        public bool Exist<T>(string TableName, T Data)
+        {
+            bool ret = false; 
+            Execute((conn, cmd, trans) => { ret = MsSqlCommandTool.Exist<T>(cmd, TableName, Data); });
+            return ret;
+        }
         #endregion
         #region Check
-        public bool Check(string TableName, string Where) { bool ret = false; Execute((conn, cmd, trans) => { ret = MsSqlCommandTool.Check(cmd, TableName, Where); }); return ret; }
+        public bool Check(string TableName, string Where)
+        {
+            bool ret = false;
+            Execute((conn, cmd, trans) => { ret = MsSqlCommandTool.Check(cmd, TableName, Where); });
+            return ret;
+        }
         #endregion
         #region Select
-        public List<T> Select<T>(string TableName) { return Select<T>(TableName, null); }
-        public List<T> Select<T>(string TableName, string Where) { List<T> ret = null; Execute((conn, cmd, trans) => { ret = MsSqlCommandTool.Select<T>(cmd, TableName, Where); }); return ret; }
+        public List<T> Select<T>(string TableName) => Select<T>(TableName, null);
+        public List<T> Select<T>(string TableName, string Where)
+        {
+            List<T> ret = null;
+            Execute((conn, cmd, trans) => { ret = MsSqlCommandTool.Select<T>(cmd, TableName, Where); });
+            return ret;
+        }
         #endregion 
         #region Update
         public void Update<T>(string TableName, params T[] Datas)
         {
             Transaction((conn, trans) =>
             {
-                try
+                foreach (var Data in Datas)
                 {
-                    foreach (var Data in Datas)
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.Transaction = trans;
-                            MsSqlCommandTool.Update<T>(cmd, TableName, Data);
-                        }
+                        cmd.Transaction = trans;
+                        MsSqlCommandTool.Update<T>(cmd, TableName, Data);
                     }
-
-                    trans.Commit();
                 }
-                catch (Exception ex)
-                {
-                    try { trans.Rollback(); }
-                    catch (SqlException ex2) { }
-                }
-
             });
         }
         #endregion
@@ -84,89 +88,75 @@ namespace Devinno.Database
         {
             Transaction((conn, trans) =>
             {
-                try
+                foreach (var Data in Datas)
                 {
-                    foreach (var Data in Datas)
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.Transaction = trans;
-                            MsSqlCommandTool.Insert<T>(cmd, TableName, Data);
-                        }
+                        cmd.Transaction = trans;
+                        MsSqlCommandTool.Insert<T>(cmd, TableName, Data);
                     }
-
-                    trans.Commit();
                 }
-                catch (Exception ex)
-                {
-                    try { trans.Rollback(); }
-                    catch (SqlException ex2) { }
-                }
-
             });
         }
         #endregion
         #region Delete
         public void Delete<T>(string TableName, params T[] Datas) { Execute((conn, cmd, trans) => { MsSqlCommandTool.Delete<T>(cmd, TableName, Datas); }); }
-        public void Delete(string TableName, string Where) { Execute((conn, cmd, trans) => { MsSqlCommandTool.Delete(cmd, TableName, Where); }); }
+        public void Delete(string TableName, string Where)
+        {
+            Execute((conn, cmd, trans) => { MsSqlCommandTool.Delete(cmd, TableName, Where); });
+        }
         #endregion
         #endregion
 
         #region Execute
         public void Execute(Action<SqlConnection, SqlCommand, SqlTransaction> ExcuteQuery)
         {
-            try
+            using (var conn = new SqlConnection(ConnectString))
             {
-                using (var conn = new SqlConnection(ConnectString))
+                conn.Open();
+                using (var trans = conn.BeginTransaction())
                 {
-                    conn.Open();
-                    using (var trans = conn.BeginTransaction())
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.Transaction = trans;
-                            try
-                            {
-                                ExcuteQuery(conn, cmd, trans);
-                                trans.Commit();
-                            }
-                            catch (Exception ex)
-                            {
-                                var sql = cmd.CommandText;
-                                try { trans.Rollback(); }
-                                catch (SqlException ex2) { }
-                            }
-                        }
-                    }
-                }
-            }
-
-            catch (Exception ex) { }
-        }
-
-        public void Transaction(Action<SqlConnection, SqlTransaction> ExcuteTransaction)
-        {
-            try
-            {
-                using (var conn = new SqlConnection(ConnectString))
-                {
-                    conn.Open();
-                    using (var trans = conn.BeginTransaction())
-                    {
+                        cmd.Transaction = trans;
                         try
                         {
-                            ExcuteTransaction(conn, trans);
+                            ExcuteQuery(conn, cmd, trans);
                             trans.Commit();
                         }
                         catch (Exception ex)
                         {
                             try { trans.Rollback(); }
                             catch (SqlException ex2) { }
+
+                            throw ex;
                         }
                     }
                 }
             }
-            catch (Exception ex) { }
+        }
+
+        public void Transaction(Action<SqlConnection, SqlTransaction> ExcuteTransaction)
+        {
+            using (var conn = new SqlConnection(ConnectString))
+            {
+                conn.Open();
+                using (var trans = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        ExcuteTransaction(conn, trans);
+                        trans.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        try { trans.Rollback(); }
+                        catch (SqlException ex2) { }
+
+                        throw ex;
+                    }
+                }
+            }
         }
         #endregion
         #endregion
@@ -232,14 +222,14 @@ namespace Devinno.Database
         public static bool Exist<T>(SqlCommand cmd, string TableName, T Data)
         {
             bool ret = false;
-            
+
             string sql = $"SELECT * FROM [{TableName}] {GetWhere<T>(Data)}";
             cmd.CommandText = sql;
             using (var rd = cmd.ExecuteReader())
             {
                 ret = rd.HasRows;
             }
-            
+
             return ret;
         }
         #endregion
@@ -380,25 +370,25 @@ namespace Devinno.Database
                 {
                     string sType = null, sDefault = null;
                     #region sType / sDefault
-                    if (ni.Type == typeof(bool))            { sType = "[bit]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(sbyte))      { sType = "[int]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(byte))       { sType = "[int]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(short))      { sType = "[int]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(ushort))     { sType = "[int]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(int))        { sType = "[int]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(uint))       { sType = "[bigint]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(long))       { sType = "[bigint]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(ulong))      { sType = "[bigint]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(float))      { sType = "[real]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(double))     { sType = "[float]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(decimal))    { sType = "[decimal]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(char))       { sType = "[char](1)"; sDefault = "' '"; }
-                    else if (ni.Type == typeof(string))     { sType = "[varchar](max)"; sDefault = "''"; }
-                    else if (ni.Type == typeof(DateTime))   { sType = "[datetime]"; sDefault = "'1970-01-01 00:00:00'"; }
-                    else if (ni.Type == typeof(TimeSpan))   { sType = "[text]"; sDefault = "'00:00:00'"; }
-                    else if (ni.Type.IsEnum)                { sType = "[int]"; sDefault = "0"; }
-                    else if (ni.Type == typeof(byte[]))     { sType = "[varchar](max)"; sDefault = "NULL"; }
-                    else if (ni.Type == typeof(Bitmap))     { sType = "[varchar](max)"; sDefault = "NULL"; }
+                    if (ni.Type == typeof(bool)) { sType = "[bit]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(sbyte)) { sType = "[int]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(byte)) { sType = "[int]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(short)) { sType = "[int]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(ushort)) { sType = "[int]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(int)) { sType = "[int]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(uint)) { sType = "[bigint]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(long)) { sType = "[bigint]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(ulong)) { sType = "[bigint]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(float)) { sType = "[real]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(double)) { sType = "[float]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(decimal)) { sType = "[decimal]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(char)) { sType = "[char](1)"; sDefault = "' '"; }
+                    else if (ni.Type == typeof(string)) { sType = "[varchar](max)"; sDefault = "''"; }
+                    else if (ni.Type == typeof(DateTime)) { sType = "[datetime]"; sDefault = "'1970-01-01 00:00:00'"; }
+                    else if (ni.Type == typeof(TimeSpan)) { sType = "[text]"; sDefault = "'00:00:00'"; }
+                    else if (ni.Type.IsEnum) { sType = "[int]"; sDefault = "0"; }
+                    else if (ni.Type == typeof(byte[])) { sType = "[varchar](max)"; sDefault = "NULL"; }
+                    else if (ni.Type == typeof(Bitmap)) { sType = "[varchar](max)"; sDefault = "NULL"; }
                     else throw new Exception("Unknown Type");
 
                     var sqlType = pi.CustomAttributes.Where(x => x.AttributeType == typeof(SqlTypeAttribute)).FirstOrDefault()
@@ -417,9 +407,9 @@ namespace Devinno.Database
                         {
                             if (sDefault != null)
                             {
-                                if (sDefault == "NULL") 
+                                if (sDefault == "NULL")
                                     ret = $"     [{pi.Name}] {sType} DEFAULT NULL";
-                                else 
+                                else
                                     ret = $"     [{pi.Name}] {sType} NOT NULL DEFAULT {sDefault}";
                             }
                             else ret = $"     [{pi.Name}] {sType}";
@@ -445,11 +435,11 @@ namespace Devinno.Database
             {
                 string sType = null, sAutoInc = "";
                 #region sType / sAutoInc
-                if (ni.Type == typeof(int) && !ni.IsNullable)           { sType = "[int]"; }
-                else if (ni.Type == typeof(uint) && !ni.IsNullable)     { sType = "[bigint]"; }
-                else if (ni.Type == typeof(long) && !ni.IsNullable)     { sType = "[bigint]"; }
-                else if (ni.Type == typeof(ulong) && !ni.IsNullable)    { sType = "[bigint]"; }
-                else if (ni.Type == typeof(string) && !ni.IsNullable)   { sType = "[varchar](max)"; }
+                if (ni.Type == typeof(int) && !ni.IsNullable) { sType = "[int]"; }
+                else if (ni.Type == typeof(uint) && !ni.IsNullable) { sType = "[bigint]"; }
+                else if (ni.Type == typeof(long) && !ni.IsNullable) { sType = "[bigint]"; }
+                else if (ni.Type == typeof(ulong) && !ni.IsNullable) { sType = "[bigint]"; }
+                else if (ni.Type == typeof(string) && !ni.IsNullable) { sType = "[varchar](max)"; }
                 else new Exception("This type cannot be used as a key.");
 
                 #region SqlType.TypeString
@@ -463,13 +453,13 @@ namespace Devinno.Database
                                   ?.NamedArguments.Where(x => x.MemberName == "AutoIncrement").FirstOrDefault().TypedValue.Value ?? false;
 
 
-                if(bAutoInc is bool && (bool)bAutoInc) sAutoInc = "IDENTITY(1,1)";
+                if (bAutoInc is bool && (bool)bAutoInc) sAutoInc = "IDENTITY(1,1)";
                 #endregion
                 #endregion
 
                 if (sType != null)
                 {
-                   ret = $"     [{pi.Name}] {sType} {sAutoInc} NOT NULL";
+                    ret = $"     [{pi.Name}] {sType} {sAutoInc} NOT NULL";
                 }
             }
             else throw new Exception("This type cannot be used as a key.");
@@ -544,7 +534,7 @@ namespace Devinno.Database
         public static string GetWhere<T>(params T[] Datas)
         {
             var keys = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
-            
+
             return GetWhere(keys, Datas);
         }
 
@@ -556,9 +546,9 @@ namespace Devinno.Database
             {
                 ret += " WHERE ";
 
-                for(int i= 0; i < Datas.Length; i++)
+                for (int i = 0; i < Datas.Length; i++)
                 {
-                    var v = Datas[i]; 
+                    var v = Datas[i];
 
                     ret += " (";
                     for (int j = 0; j < keys.Count; j++)
@@ -625,7 +615,7 @@ namespace Devinno.Database
         #region Read
         static void Read<T>(SqlDataReader? rd, List<PropertyInfo> props, T? v)
         {
-            if(rd != null && v != null && props != null && props.Count > 0)
+            if (rd != null && v != null && props != null && props.Count > 0)
             {
                 foreach (var p in props)
                 {
@@ -856,7 +846,7 @@ namespace Devinno.Database
                                 }
                                 else
                                 {
-                                    p.SetValue(v, Enum.ToObject(tp, rd.GetInt32(idx)));
+                                    p.SetValue(v, Enum.ToObject(ni.Type, rd.GetInt32(idx)));
                                 }
                             }
                             #endregion
@@ -894,7 +884,7 @@ namespace Devinno.Database
                             else throw new Exception("Unknown Type");
                             #endregion
                         }
-                        catch(Exception ex) { throw new Exception("Parse Error"); }
+                        catch (Exception ex) { throw new Exception("Parse Error"); }
                     }
                     else throw new Exception("Read Error");
                 }

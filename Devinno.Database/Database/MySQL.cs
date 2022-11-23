@@ -40,39 +40,43 @@ namespace Devinno.Database
         #endregion
         #region Command
         #region Exist
-        public bool Exist<T>(string TableName, T Data) { bool ret = false; Execute((conn, cmd, trans) => { ret = MySqlCommandTool.Exist<T>(cmd, TableName, Data); }); return ret; }
+        public bool Exist<T>(string TableName, T Data)
+        {
+            bool ret = false;
+            Execute((conn, cmd, trans) => { ret = MySqlCommandTool.Exist<T>(cmd, TableName, Data); });
+            return ret;
+        }
         #endregion
         #region Check
-        public bool Check(string TableName, string Where) { bool ret = false; Execute((conn, cmd, trans) => { ret = MySqlCommandTool.Check(cmd, TableName, Where); }); return ret; }
+        public bool Check(string TableName, string Where)
+        {
+            bool ret = false;
+            Execute((conn, cmd, trans) => { ret = MySqlCommandTool.Check(cmd, TableName, Where); });
+            return ret;
+        }
         #endregion
         #region Select
         public List<T> Select<T>(string TableName) { return Select<T>(TableName, null); }
-        public List<T> Select<T>(string TableName, string Where) { List<T> ret = null; Execute((conn, cmd, trans) => { ret = MySqlCommandTool.Select<T>(cmd, TableName, Where); }); return ret; }
+        public List<T> Select<T>(string TableName, string Where)
+        {
+            List<T> ret = null;
+            Execute((conn, cmd, trans) => { ret = MySqlCommandTool.Select<T>(cmd, TableName, Where); });
+            return ret;
+        }
         #endregion
         #region Update
         public void Update<T>(string TableName, params T[] Datas)
         {
             Transaction((conn, trans) =>
             {
-                try
+                foreach (var Data in Datas)
                 {
-                    foreach (var Data in Datas)
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.Transaction = trans;
-                            MySqlCommandTool.Update<T>(cmd, TableName, Data);
-                        }
+                        cmd.Transaction = trans;
+                        MySqlCommandTool.Update<T>(cmd, TableName, Data);
                     }
-
-                    trans.Commit();
                 }
-                catch (Exception ex)
-                {
-                    try { trans.Rollback(); }
-                    catch (SqlException ex2) { }
-                }
-                
             });
 
         }
@@ -82,31 +86,23 @@ namespace Devinno.Database
         {
             Transaction((conn, trans) =>
             {
-                try
+                foreach (var Data in Datas)
                 {
-                    foreach (var Data in Datas)
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.Transaction = trans;
-                            MySqlCommandTool.Insert<T>(cmd, TableName, Data);
-                        }
+                        cmd.Transaction = trans;
+                        MySqlCommandTool.Insert<T>(cmd, TableName, Data);
                     }
-
-                    trans.Commit();
                 }
-                catch (Exception ex)
-                {
-                    try { trans.Rollback(); }
-                    catch (SqlException ex2) { }
-                }
-
             });
         }
         #endregion
         #region Delete
         public void Delete<T>(string TableName, params T[] Datas) { Execute((conn, cmd, trans) => { MySqlCommandTool.Delete<T>(cmd, TableName, Datas); }); }
-        public void Delete(string TableName, string Where) { Execute((conn, cmd, trans) => { MySqlCommandTool.Delete(cmd, TableName, Where); }); }
+        public void Delete(string TableName, string Where)
+        {
+            Execute((conn, cmd, trans) => { MySqlCommandTool.Delete(cmd, TableName, Where); });
+        }
         #endregion
         #endregion
         #region Execute
@@ -132,6 +128,8 @@ namespace Devinno.Database
                             {
                                 try { trans.Rollback(); }
                                 catch (SqlException ex2) { }
+
+                                throw ex;
                             }
                         }
                     }
@@ -158,6 +156,8 @@ namespace Devinno.Database
                         {
                             try { trans.Rollback(); }
                             catch (SqlException ex2) { }
+
+                            throw ex;
                         }
                     }
                 }
@@ -250,7 +250,7 @@ namespace Devinno.Database
             {
                 ret = rd.HasRows;
             }
-            
+
             return ret;
         }
         #endregion
@@ -266,20 +266,17 @@ namespace Devinno.Database
 
             cmd.CommandText = sql;
 
-            try
+            using (var rd = cmd.ExecuteReader())
             {
-                using (var rd = cmd.ExecuteReader())
+                ret = new List<T>();
+                while (rd.Read())
                 {
-                    ret = new List<T>();
-                    while (rd.Read())
-                    {
-                        var v = (T)Activator.CreateInstance(typeof(T));
-                        Read(rd, props, v);
-                        ret.Add(v);
-                    }
+                    var v = (T)Activator.CreateInstance(typeof(T));
+                    Read(rd, props, v);
+                    ret.Add(v);
                 }
             }
-            catch (Exception ex){ }
+
             return ret;
         }
         #endregion
@@ -441,9 +438,9 @@ namespace Devinno.Database
             var ni = GetNullableInfo(pi);
             if (ni != null)
             {
-                string sType = null, sAutoInc = "", sUnsigned ="";
+                string sType = null, sAutoInc = "", sUnsigned = "";
                 #region sType / sAutoInc
-                if (ni.Type == typeof(int) && !ni.IsNullable) { sType = "int(11)";  }
+                if (ni.Type == typeof(int) && !ni.IsNullable) { sType = "int(11)"; }
                 else if (ni.Type == typeof(uint) && !ni.IsNullable) { sType = "int(11)"; sUnsigned = "unsigned"; }
                 else if (ni.Type == typeof(long) && !ni.IsNullable) { sType = "bigint(20)"; }
                 else if (ni.Type == typeof(ulong) && !ni.IsNullable) { sType = "bigint(20)"; sUnsigned = "unsigned"; }
@@ -456,7 +453,7 @@ namespace Devinno.Database
 
                 if (sqlType != null && sqlType is string) sType = (string)sqlType;
                 #endregion
-                
+
                 #region SqlKey.AutoIncrement
                 var bAutoInc = pi.CustomAttributes.Where(x => x.AttributeType == typeof(SqlKeyAttribute)).FirstOrDefault()
                                   ?.NamedArguments.Where(x => x.MemberName == "AutoIncrement").FirstOrDefault().TypedValue.Value ?? false;
@@ -855,7 +852,7 @@ namespace Devinno.Database
                                 }
                                 else
                                 {
-                                    p.SetValue(v, Enum.ToObject(tp, rd.GetInt32(idx)));
+                                    p.SetValue(v, Enum.ToObject(ni.Type, rd.GetInt32(idx)));
                                 }
                             }
                             #endregion

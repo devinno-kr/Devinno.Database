@@ -76,25 +76,14 @@ namespace Devinno.Database
         {
             TransactionWaiting((conn, trans) =>
             {
-                try
+                foreach (var Data in Datas)
                 {
-                    foreach (var Data in Datas)
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.Transaction = trans;
-                            if (Data != null) SQLiteCommandTool.Update<T>(cmd, TableName, Data);
-                        }
+                        cmd.Transaction = trans;
+                        if (Data != null) SQLiteCommandTool.Update<T>(cmd, TableName, Data);
                     }
-
-                    trans.Commit();
                 }
-                catch (Exception ex)
-                {
-                    try { trans.Rollback(); }
-                    catch (SqlException ex2) { }
-                }
-
             });
         }
         #endregion
@@ -103,25 +92,14 @@ namespace Devinno.Database
         {
             TransactionWaiting((conn, trans) =>
             {
-                try
+                foreach (var Data in Datas)
                 {
-                    foreach (var Data in Datas)
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.Transaction = trans;
-                            if (Data != null) SQLiteCommandTool.Insert<T>(cmd, TableName, Data);
-                        }
+                        cmd.Transaction = trans;
+                        if (Data != null) SQLiteCommandTool.Insert<T>(cmd, TableName, Data);
                     }
-
-                    trans.Commit();
                 }
-                catch (Exception ex)
-                {
-                    try { trans.Rollback(); }
-                    catch (SqlException ex2) { }
-                }
-
             });
         }
         #endregion
@@ -163,6 +141,8 @@ namespace Devinno.Database
                         catch (Exception ex)
                         {
                             trans.Rollback();
+
+                            throw ex;
                         }
                     }
                 }
@@ -193,6 +173,8 @@ namespace Devinno.Database
                         catch (Exception ex)
                         {
                             trans.Rollback();
+
+                            throw ex;
                         }
                     }
                 }
@@ -282,26 +264,15 @@ namespace Devinno.Database
         {
             TransactionWaiting((trans) =>
             {
-                try
+                var conn = Connection;
+                foreach (var Data in Datas)
                 {
-                    var conn = Connection;
-                    foreach (var Data in Datas)
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.Transaction = trans;
-                            if (Data != null) SQLiteCommandTool.Update<T>(cmd, TableName, Data);
-                        }
+                        cmd.Transaction = trans;
+                        if (Data != null) SQLiteCommandTool.Update<T>(cmd, TableName, Data);
                     }
-
-                    trans.Commit();
                 }
-                catch (Exception ex)
-                {
-                    try { trans.Rollback(); }
-                    catch (SqlException ex2) { }
-                }
-
             });
         }
         #endregion
@@ -310,26 +281,15 @@ namespace Devinno.Database
         {
             TransactionWaiting((trans) =>
             {
-                try
+                var conn = Connection;
+                foreach (var Data in Datas)
                 {
-                    var conn = Connection;
-                    foreach (var Data in Datas)
+                    using (var cmd = conn.CreateCommand())
                     {
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.Transaction = trans;
-                            if (Data != null) SQLiteCommandTool.Insert<T>(cmd, TableName, Data);
-                        }
+                        cmd.Transaction = trans;
+                        if (Data != null) SQLiteCommandTool.Insert<T>(cmd, TableName, Data);
                     }
-
-                    trans.Commit();
                 }
-                catch (Exception ex)
-                {
-                    try { trans.Rollback(); }
-                    catch (SqlException ex2) { }
-                }
-
             });
         }
         #endregion
@@ -367,6 +327,8 @@ namespace Devinno.Database
                     catch (Exception ex)
                     {
                         trans.Rollback();
+
+                        throw ex;
                     }
                 }
             }
@@ -393,6 +355,8 @@ namespace Devinno.Database
                     catch (Exception ex)
                     {
                         trans.Rollback();
+
+                        throw ex;
                     }
                 }
 
@@ -525,20 +489,16 @@ namespace Devinno.Database
 
             cmd.CommandText = sql;
 
-            try
+            using (var rd = cmd.ExecuteReader())
             {
-                using (var rd = cmd.ExecuteReader())
+                ret = new List<T>();
+                while (rd.Read())
                 {
-                    ret = new List<T>();
-                    while (rd.Read())
-                    {
-                        var v = (T)Activator.CreateInstance(typeof(T));
-                        Read(rd, props, v);
-                        ret.Add(v);
-                    }
+                    var v = (T)Activator.CreateInstance(typeof(T));
+                    Read(rd, props, v);
+                    ret.Add(v);
                 }
             }
-            catch (Exception ex) { }
             return ret;
         }
         #endregion
@@ -1114,7 +1074,7 @@ namespace Devinno.Database
                                 }
                                 else
                                 {
-                                    p.SetValue(v, Enum.ToObject(tp, rd.GetInt32(idx)));
+                                    p.SetValue(v, Enum.ToObject(ni.Type, rd.GetInt32(idx)));
                                 }
                             }
                             #endregion
