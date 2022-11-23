@@ -31,7 +31,7 @@ namespace Sample
                                                 db.Update<Data>(tbl, d);
                                                 Print(db.Select<Data>(tbl));
             Console.WriteLine("Delete");        db.Delete<Data>(tbl, d);
-                                                Print(db.Select<Data>(tbl));
+                                                Print(db.Select<Data>(tbl)); 
 
             Console.ReadKey();
         }
