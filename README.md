@@ -16,15 +16,15 @@
 
 ## 목차
   * Devinno.Database
-    * [MySQL](#MySQL)
-    * [MsSQL](#MsSQL)
-    * [SQLite](#SQLite)
+    * [MySQL](#1-1-MySQL)
+    * [MsSQL](#1-2-MsSQL)
+    * [SQLite](#1-3-SQLite)
   <br />  
   <br />  
 
 ## 사용법
-### 1. Devinno.Database
-#### 1.1. MySQL
+### 1 Devinno.Database
+#### 1-1 MySQL
 MySQL DB 기능 수행
 
 * **샘플코드**
@@ -102,7 +102,7 @@ DropTable, CreateTable, Select, Insert, Update, Delete 테스트
 ```
 <br /> 
 
-#### 1.2. MsSQL
+#### 1-2 MsSQL
 MsSQL DB 기능 수행
 
 * **샘플코드**
@@ -180,7 +180,7 @@ DropTable, CreateTable, Select, Insert, Update, Delete 테스트
 ```
 <br /> 
 
-#### 1.3. SQLite
+#### 1-3 SQLite
 SQLite DB 기능 수행
 
 * **샘플코드**
