@@ -1,4 +1,4 @@
-﻿using MySql.Data.MySqlClient;
+﻿using MySqlConnector;
 using Devinno.Tools;
 using System;
 using System.Collections.Generic;
