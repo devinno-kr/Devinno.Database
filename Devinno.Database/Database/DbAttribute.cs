@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,6 +30,13 @@ namespace Devinno.Database
     {
         public bool IsNullable { get; set; }
         public Type Type { get; set; }
+    }
+    #endregion
+    #region class : KeyProps
+    public class KeyProps
+    {
+        public List<PropertyInfo> Keys { get; set; }
+        public List<PropertyInfo> Props { get; set; }
     }
     #endregion
 }

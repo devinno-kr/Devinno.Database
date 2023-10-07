@@ -59,11 +59,19 @@ namespace Devinno.Database
         }
         #endregion
         #region Select
-        public List<T> Select<T>(string TableName) => Select<T>(TableName, null);
+        public List<T> Select<T>(string TableName) => Select<T>(TableName, (string)null);
         public List<T> Select<T>(string TableName, string Where)
         {
             List<T> ret = null;
             Execute((conn, cmd, trans) => { ret = MsSqlCommandTool.Select<T>(cmd, TableName, Where); });
+            return ret;
+        }
+
+        public List<T> Select<T>(string TableName, Func<SqlDataReader, T> parse) => Select<T>(TableName, null, parse);
+        public List<T> Select<T>(string TableName, string Where, Func<SqlDataReader, T> parse)
+        {
+            List<T> ret = null;
+            Execute((conn, cmd, trans) => { ret = MsSqlCommandTool.Select<T>(cmd, TableName, Where, parse); });
             return ret;
         }
         #endregion 
@@ -82,18 +90,83 @@ namespace Devinno.Database
                 }
             });
         }
+
+        public void Update<T>(string TableName, Func<PropertyInfo, T, object> parse, params T[] Datas)
+        {
+            Transaction((conn, trans) =>
+            {
+                var kp = MsSqlCommandTool.GetKeysProps<T>();
+                foreach (var Data in Datas)
+                {
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = trans;
+                        MsSqlCommandTool.Update<T>(cmd, TableName, kp, Data, parse);
+                    }
+                }
+            });
+        }
+
+        public void Update<T>(string TableName, Action<List<PropertyInfo>, T, SqlParameterCollection> parse, params T[] Datas)
+        {
+            Transaction((conn, trans) =>
+            {
+                var kp = MsSqlCommandTool.GetKeysProps<T>();
+                foreach (var Data in Datas)
+                {
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = trans;
+                        MsSqlCommandTool.Update<T>(cmd, TableName, kp, Data, parse);
+                    }
+                }
+            });
+        }
         #endregion
         #region Insert
         public void Insert<T>(string TableName, params T[] Datas)
         {
             Transaction((conn, trans) =>
             {
+                var cols = MsSqlCommandTool.GetColumns<T>();
                 foreach (var Data in Datas)
                 {
                     using (var cmd = conn.CreateCommand())
                     {
                         cmd.Transaction = trans;
-                        MsSqlCommandTool.Insert<T>(cmd, TableName, Data);
+                        MsSqlCommandTool.Insert<T>(cmd, TableName, cols, Data);
+                    }
+                }
+            });
+        }
+
+        public void Insert<T>(string TableName, Func<PropertyInfo, T, object> parse, params T[] Datas)
+        {
+            Transaction((conn, trans) =>
+            {
+                var cols = MsSqlCommandTool.GetColumns<T>();
+                foreach (var Data in Datas)
+                {
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = trans;
+                        MsSqlCommandTool.Insert<T>(cmd, TableName, cols, Data, parse);
+                    }
+                }
+            });
+        }
+
+        public void Insert<T>(string TableName, Action<List<PropertyInfo>, T, SqlParameterCollection> parse, params T[] Datas)
+        {
+            Transaction((conn, trans) =>
+            {
+                var cols = MsSqlCommandTool.GetColumns<T>();
+                foreach (var Data in Datas)
+                {
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = trans;
+                        MsSqlCommandTool.Insert<T>(cmd, TableName, cols, Data, parse);
                     }
                 }
             });
@@ -273,6 +346,30 @@ namespace Devinno.Database
             }
             return ret;
         }
+
+        public static List<T> Select<T>(SqlCommand cmd, string TableName, string Where, Func<SqlDataReader, T> parse)
+        {
+            List<T> ret = null;
+
+            string sql = "SELECT * FROM `" + TableName + "`";
+            if (!string.IsNullOrEmpty(Where)) sql += " " + Where;
+
+            var props = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute))).ToList();
+
+            cmd.CommandText = sql;
+
+            using (var rd = cmd.ExecuteReader())
+            {
+                ret = new List<T>();
+                while (rd.Read())
+                {
+                    var v = parse(rd);
+                    if (v != null) ret.Add(v);
+                }
+            }
+
+            return ret;
+        }
         #endregion
         #region Update
         public static void Update<T>(SqlCommand cmd, string TableName, T Data)
@@ -293,26 +390,50 @@ namespace Devinno.Database
                 cmd.ExecuteNonQuery();
             }
         }
-        #endregion
-        #region Insert
-        public static void Insert<T>(SqlCommand cmd, string TableName, T Data)
+
+        public static void Update<T>(SqlCommand cmd, string TableName, KeyProps kp, T Data, Func<PropertyInfo, T, object> parse)
         {
             if (Data != null)
             {
-                #region cols
-                var keys = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
-                var props = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute)) && !Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
-                var cols = new List<PropertyInfo>();
-                foreach (var v in keys)
-                {
-                    var bAutoInc = v.CustomAttributes.Where(x => x.AttributeType == typeof(SqlKeyAttribute)).FirstOrDefault()
-                                     ?.NamedArguments.Where(x => x.MemberName == "AutoIncrement").FirstOrDefault().TypedValue.Value ?? false;
+                var keys = kp.Keys;
+                var props = kp.Props;
 
-                    if (bAutoInc is bool && !(bool)bAutoInc) cols.Add(v);
-                }
-                cols.AddRange(props);
-                #endregion
+                string sql = $"UPDATE `{TableName}` SET ";
+                string where = GetWhere<T>(keys, Data);
+                foreach (var p in props) sql += $" `{p.Name}` = @{p.Name},";
+                sql = sql.Substring(0, sql.Length - 1) + where;
 
+                cmd.CommandText = sql;
+                foreach (var pi in props) cmd.Parameters.AddWithValue("@" + pi.Name, parse(pi, Data));
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static void Update<T>(SqlCommand cmd, string TableName, KeyProps kp, T Data, Action<List<PropertyInfo>, T, SqlParameterCollection> parse)
+        {
+            if (Data != null)
+            {
+                var keys = kp.Keys;
+                var props = kp.Props;
+
+                string sql = $"UPDATE `{TableName}` SET ";
+                string where = GetWhere<T>(keys, Data);
+                foreach (var p in props) sql += $" `{p.Name}` = @{p.Name},";
+                sql = sql.Substring(0, sql.Length - 1) + where;
+
+                cmd.CommandText = sql;
+
+                parse(props, Data, cmd.Parameters);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+        #endregion
+        #region Insert
+        public static void Insert<T>(SqlCommand cmd, string TableName, List<PropertyInfo> cols, T Data)
+        {
+            if (Data != null)
+            {
                 string s_insert_in = string.Concat(cols.Select(x => $" [{x.Name}],").ToArray());
                 string s_values_in = string.Concat(cols.Select(x => $" @{x.Name},").ToArray());
 
@@ -324,11 +445,50 @@ namespace Devinno.Database
                 string s_sql = s_insert + "\r\n" + s_values;
 
                 cmd.CommandText = s_sql;
-                foreach (var pi in cols)
-                {
-                    var sVal = GetValue(Data, pi);
-                    cmd.Parameters.AddWithValue("@" + pi.Name, sVal);
-                }
+                foreach (var pi in cols) cmd.Parameters.AddWithValue("@" + pi.Name, GetValue(Data, pi));
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static void Insert<T>(SqlCommand cmd, string TableName, List<PropertyInfo> cols, T Data, Func<PropertyInfo, T, object> parse)
+        {
+            if (Data != null)
+            {
+                string s_insert_in = string.Concat(cols.Select(x => $" `{x.Name}`,").ToArray());
+                string s_values_in = string.Concat(cols.Select(x => $" @{x.Name},").ToArray());
+
+                s_values_in = s_values_in.Substring(0, s_values_in.Length - 1);
+                s_insert_in = s_insert_in.Substring(0, s_insert_in.Length - 1);
+
+                string s_insert = $"INSERT INTO `{TableName}` ({s_insert_in})";
+                string s_values = $"VALUES ({s_values_in})";
+                string s_sql = s_insert + "\r\n" + s_values;
+
+                cmd.CommandText = s_sql;
+                foreach (var pi in cols) cmd.Parameters.AddWithValue("@" + pi.Name, parse(pi, Data));
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static void Insert<T>(SqlCommand cmd, string TableName, List<PropertyInfo> cols, T Data, Action<List<PropertyInfo>, T, SqlParameterCollection> parse)
+        {
+            if (Data != null)
+            {
+                string s_insert_in = string.Concat(cols.Select(x => $" `{x.Name}`,").ToArray());
+                string s_values_in = string.Concat(cols.Select(x => $" @{x.Name},").ToArray());
+
+                s_values_in = s_values_in.Substring(0, s_values_in.Length - 1);
+                s_insert_in = s_insert_in.Substring(0, s_insert_in.Length - 1);
+
+                string s_insert = $"INSERT INTO `{TableName}` ({s_insert_in})";
+                string s_values = $"VALUES ({s_values_in})";
+                string s_sql = s_insert + "\r\n" + s_values;
+
+                cmd.CommandText = s_sql;
+
+                parse(cols, Data, cmd.Parameters);
 
                 cmd.ExecuteNonQuery();
             }
@@ -609,6 +769,35 @@ namespace Devinno.Database
                 };
             }
 
+            return ret;
+        }
+        #endregion
+        #region GetColumns
+        public static List<PropertyInfo> GetColumns<T>()
+        {
+            #region cols
+            var kp = GetKeysProps<T>();
+            var keys = kp.Keys;
+            var props = kp.Props;
+            var cols = new List<PropertyInfo>();
+            foreach (var v in keys)
+            {
+                var bAutoInc = v.CustomAttributes.Where(x => x.AttributeType == typeof(SqlKeyAttribute)).FirstOrDefault()
+                                 ?.NamedArguments.Where(x => x.MemberName == "AutoIncrement").FirstOrDefault().TypedValue.Value ?? false;
+
+                if (bAutoInc is bool && !(bool)bAutoInc) cols.Add(v);
+            }
+            cols.AddRange(props);
+            #endregion
+
+            return cols;
+        }
+
+        public static KeyProps GetKeysProps<T>()
+        {
+            var ret = new KeyProps();
+            ret.Keys = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
+            ret.Props = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute)) && !Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
             return ret;
         }
         #endregion

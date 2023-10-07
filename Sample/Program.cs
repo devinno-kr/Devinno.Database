@@ -1,7 +1,9 @@
 ﻿using Devinno.Database;
+using MySqlConnector;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Sample
 {
@@ -11,7 +13,7 @@ namespace Sample
         {
             var db = new SQLite { FileName = "db.sqlite" };
             var tbl = "tblTest";
-
+            /*
             Console.WriteLine("DropTable");     db.DropTable(tbl);
             Console.WriteLine("CreateTable");   db.CreateTable<Data>(tbl);
             Console.WriteLine("Insert");        db.Insert<Data>(tbl, new Data
@@ -32,7 +34,8 @@ namespace Sample
                                                 Print(db.Select<Data>(tbl));
             Console.WriteLine("Delete");        db.Delete<Data>(tbl, d);
                                                 Print(db.Select<Data>(tbl)); 
-
+            */
+             
             Console.ReadKey();
         }
 
@@ -53,5 +56,8 @@ namespace Sample
             public override string ToString() =>
                 $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
         }
+ 
     }
+
+
 }
