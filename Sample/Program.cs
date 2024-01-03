@@ -1,4 +1,5 @@
 ﻿using Devinno.Database;
+using HanilSensor.Common;
 using MySqlConnector;
 using System;
 using System.Collections.Generic;
@@ -11,9 +12,10 @@ namespace Sample
     {
         static void Main(string[] args)
         {
+            /*
             var db = new SQLite { FileName = "db.sqlite" };
             var tbl = "tblTest";
-            /*
+            
             Console.WriteLine("DropTable");     db.DropTable(tbl);
             Console.WriteLine("CreateTable");   db.CreateTable<Data>(tbl);
             Console.WriteLine("Insert");        db.Insert<Data>(tbl, new Data
@@ -35,12 +37,13 @@ namespace Sample
             Console.WriteLine("Delete");        db.Delete<Data>(tbl, d);
                                                 Print(db.Select<Data>(tbl)); 
             */
-             
+
             Console.ReadKey();
         }
 
         static void Print(List<Data> ls) => ls.ForEach((v) => Console.WriteLine(v));
 
+        #region class : Data
         public class Data
         {
             [SqlKey(AutoIncrement = true)]
@@ -56,7 +59,7 @@ namespace Sample
             public override string ToString() =>
                 $"{Id},{Humidity},{Temperature},{OpenClose},{Operation},{Count},{Description}";
         }
- 
+        #endregion
     }
 
 
