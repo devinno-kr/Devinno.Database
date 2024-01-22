@@ -6,11 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\..\..\..\..\..\Hanil\Hanil.SensorMonitor\src\HanilSensorBox\HanilSensorBox\Datas\DbData.cs" Link="DbData.cs" />
-    <Compile Include="..\..\..\..\..\..\..\Hanil\Hanil.SensorMonitor\src\HanilSensorBox\HanilSensorBox\Datas\SensorData.cs" Link="SensorData.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Devinno.Database\Devinno.Database.csproj" />
   </ItemGroup>
 

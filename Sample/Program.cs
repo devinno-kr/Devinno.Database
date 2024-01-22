@@ -1,5 +1,4 @@
 ﻿using Devinno.Database;
-using HanilSensor.Common;
 using MySqlConnector;
 using System;
 using System.Collections.Generic;
@@ -37,8 +36,9 @@ namespace Sample
             Console.WriteLine("Delete");        db.Delete<Data>(tbl, d);
                                                 Print(db.Select<Data>(tbl)); 
             */
-
+            App app = new App();
             Console.ReadKey();
+          var len=  Guid.NewGuid().ToString().Length;
         }
 
         static void Print(List<Data> ls) => ls.ForEach((v) => Console.WriteLine(v));
