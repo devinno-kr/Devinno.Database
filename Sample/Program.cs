@@ -36,9 +36,7 @@ namespace Sample
             Console.WriteLine("Delete");        db.Delete<Data>(tbl, d);
                                                 Print(db.Select<Data>(tbl)); 
             */
-            App app = new App();
             Console.ReadKey();
-          var len=  Guid.NewGuid().ToString().Length;
         }
 
         static void Print(List<Data> ls) => ls.ForEach((v) => Console.WriteLine(v));
@@ -48,7 +46,6 @@ namespace Sample
         {
             [SqlKey(AutoIncrement = true)]
             public int Id { get; set; }
-
             public double Humidity { get; set; }
             public double Temperature { get; set; }
             public bool OpenClose { get; set; }

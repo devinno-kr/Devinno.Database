@@ -523,8 +523,8 @@ namespace Devinno.Database
         #region CreateTable
         public static void CreateTable<T>(SqliteCommand cmd, string TableName)
         {
-            var keys = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
-            var props = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute)) && !Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
+            var keys = typeof(T).GetProperties().Where(x => x.CanRead && (x.CanWrite || Attribute.IsDefined(x, typeof(SqlReadOnlyAttribute))) && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
+            var props = typeof(T).GetProperties().Where(x => x.CanRead && (x.CanWrite || Attribute.IsDefined(x, typeof(SqlReadOnlyAttribute))) && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute)) && !Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
 
             if (props.Count > 0)
             {
@@ -634,7 +634,7 @@ namespace Devinno.Database
             string sql = "SELECT * FROM `" + TableName + "`";
             if (!string.IsNullOrEmpty(Where)) sql += " " + Where;
 
-            var props = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute))).ToList();
+            var props = typeof(T).GetProperties().Where(x => x.CanRead && (x.CanWrite || Attribute.IsDefined(x, typeof(SqlReadOnlyAttribute))) && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute))).ToList();
 
             cmd.CommandText = sql;
 
@@ -658,7 +658,7 @@ namespace Devinno.Database
             string sql = "SELECT * FROM `" + TableName + "`";
             if (!string.IsNullOrEmpty(Where)) sql += " " + Where;
 
-            var props = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute))).ToList();
+            var props = typeof(T).GetProperties().Where(x => x.CanRead && (x.CanWrite || Attribute.IsDefined(x, typeof(SqlReadOnlyAttribute))) && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute))).ToList();
 
             cmd.CommandText = sql;
 
@@ -680,8 +680,8 @@ namespace Devinno.Database
         {
             if (Data != null)
             {
-                var keys = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
-                var props = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute)) && !Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
+                var keys = typeof(T).GetProperties().Where(x => x.CanRead && (x.CanWrite || Attribute.IsDefined(x, typeof(SqlReadOnlyAttribute))) && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
+                var props = typeof(T).GetProperties().Where(x => x.CanRead && (x.CanWrite || Attribute.IsDefined(x, typeof(SqlReadOnlyAttribute))) && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute)) && !Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
 
                 string sql = $"UPDATE `{TableName}` SET ";
                 string where = GetWhere<T>(keys, Data);
@@ -997,7 +997,7 @@ namespace Devinno.Database
         #region GetWhere
         public static string GetWhere<T>(params T[] Datas)
         {
-            var keys = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
+            var keys = typeof(T).GetProperties().Where(x => x.CanRead && (x.CanWrite || Attribute.IsDefined(x, typeof(SqlReadOnlyAttribute))) && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
 
             return GetWhere(keys, Datas);
         }
@@ -1100,8 +1100,8 @@ namespace Devinno.Database
         public static KeyProps GetKeysProps<T>()
         {
             var ret = new KeyProps();
-            ret.Keys = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
-            ret.Props = typeof(T).GetProperties().Where(x => x.CanRead && x.CanWrite && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute)) && !Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
+            ret.Keys = typeof(T).GetProperties().Where(x => x.CanRead && (x.CanWrite || Attribute.IsDefined(x, typeof(SqlReadOnlyAttribute))) && Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
+            ret.Props = typeof(T).GetProperties().Where(x => x.CanRead && (x.CanWrite || Attribute.IsDefined(x, typeof(SqlReadOnlyAttribute))) && !Attribute.IsDefined(x, typeof(SqlIgnoreAttribute)) && !Attribute.IsDefined(x, typeof(SqlKeyAttribute))).ToList();
             return ret;
         }
         #endregion

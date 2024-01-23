@@ -25,6 +25,10 @@ namespace Devinno.Database
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
     public sealed class SqlIgnoreAttribute : Attribute { }
     #endregion}
+    #region attribute : SqlIgnore
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
+    public sealed class SqlReadOnlyAttribute : Attribute { }
+    #endregion}
     #region class : NullableInfo
     class NullableInfo
     {
